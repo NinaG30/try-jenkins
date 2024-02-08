@@ -1,27 +1,31 @@
-version: '3.8'
-services:
-  api:
-    build: ./api
-    ports:
-      - "3000:3000"
-    depends_on:
-      - mongodb
-    environment:
-      MONGO_URI: mongodb://mongodb:27017/yourdb
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongodb-data:/data/db
-  jenkins:
-    image: jenkins/jenkins:lts 
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    volumes:
-      - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-volumes:
-  mongodb-data:
-  jenkins-data:
+version: '3.8' // Specifies the version of the Docker Compose file format being used.
+
+services: // Defines the services that will be created and run.
+  api: // Defines a service named "api".
+    build: ./api // Specifies the build context for the service.
+    ports: // Exposes ports from the container to the host machine.
+      - "3000:3000" // Maps port 3000 of the container to port 3000 of the host machine.
+    depends_on: // Specifies the services that this service depends on.
+      - mongodb // The "api" service depends on the "mongodb" service.
+    environment: // Sets environment variables for the service.
+      MONGO_URI: mongodb://mongodb:27017/yourdb // Sets the MONGO_URI environment variable.
+
+  mongodb: // Defines a service named "mongodb".
+    image: mongo:latest // Specifies the Docker image to be used for the service.
+    ports: // Exposes ports from the container to the host machine.
+      - "27017:27017" // Maps port 27017 of the container to port 27017 of the host machine.
+    volumes: // Mounts volumes to the container.
+      - mongodb-data:/data/db // Mounts the "mongodb-data" volume to the "/data/db" directory in the container.
+
+  jenkins: // Defines a service named "jenkins".
+    image: jenkins/jenkins:lts // Specifies the Docker image to be used for the service.
+    ports: // Exposes ports from the container to the host machine.
+      - "8080:8080" // Maps port 8080 of the container to port 8080 of the host machine.
+      - "50000:50000" // Maps port 50000 of the container to port 50000 of the host machine.
+    volumes: // Mounts volumes to the container.
+      - jenkins-data:/var/jenkins_home // Mounts the "jenkins-data" volume to the "/var/jenkins_home" directory in the container.
+      - /var/run/docker.sock:/var/run/docker.sock // Mounts the Docker socket to the container.
+
+volumes: // Defines named volumes that can be used by services.
+  mongodb-data: // Defines a named volume named "mongodb-data".
+  jenkins-data: // Defines a named volume named "jenkins-data".

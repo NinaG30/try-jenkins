@@ -1,62 +1,61 @@
 pipeline {
-    agent any {
-        environment {
-            DOCKER_IMAGE = 'youruserdockerhubname/myapp'
-            KUB_CONFIG = credentials('kubeconfig-id')
-            DOCKER_CREDENTIALS_ID = 'dockerhub-credentials-id'
+    agent any { // Define the agent to run the pipeline on any available agent
+        environment { // Define environment variables
+            DOCKER_IMAGE = 'youruserdockerhubname/myapp' // Set the Docker image name
+            KUB_CONFIG = credentials('kubeconfig-id') // Set the Kubernetes configuration credentials
+            DOCKER_CREDENTIALS_ID = 'dockerhub-credentials-id' // Set the Docker credentials ID
         }
     }
-    stages {
-        stage('Checkout') {
-            steps {
-                git url : 'https://github.com/yourrepo/myapp.git', branch: 'main'
+    stages { // Define the stages of the pipeline
+        stage('Checkout') { // Checkout stage
+            steps { // Define the steps of the stage
+                git url : 'https://github.com/yourrepo/myapp.git', branch: 'main' // Checkout the code from the specified Git repository and branch
             }
         }
-        stage('Test') {
-            steps {
-                script {
-                    // Exécuter les tests de l'application NodeJS
-                    sh 'npm install'
-                    sh 'npm test'
+        stage('Test') { // Test stage
+            steps { // Define the steps of the stage
+                script { // Execute a script block
+                    sh 'npm install' // Install NodeJS dependencies
+                    sh 'npm test' // Run the tests for the NodeJS application
                 }
             }
         }
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}").push("${env.BUILD_ID}", {
-                        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) {
-                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}"
-                            sh "docker push ${DOCKER_IMAGE}:${env.BUILD_ID}"
+        stage('Build Docker Image') { // Build Docker Image stage
+            steps { // Define the steps of the stage
+                script { // Execute a script block
+                    docker.build("${DOCKER_IMAGE}:${env.BUILD_ID}").push("${env.BUILD_ID}", { // Build and push the Docker image
+                        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS_ID}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASSWORD')]) { // Use Docker credentials
+                            sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASSWORD}" // Login to Docker registry
+                            sh "docker push ${DOCKER_IMAGE}:${env.BUILD_ID}" // Push the Docker image to the registry
                         }
                     })
                 }
             }
         }
-        stage('Deploy to Kubernetes') {
-            steps {
-                withCredentials([file(credentialsId: ${KUBE_CONFIG}, variable: 'KUBECONFIG')]) {
+        stage('Deploy to Kubernetes') { // Deploy to Kubernetes stage
+            steps { // Define the steps of the stage
+                withCredentials([file(credentialsId: ${KUBE_CONFIG}, variable: 'KUBECONFIG')]) { // Use Kubernetes configuration credentials
                     sh """
                     kubectl set image deployment/myapp-deployment myapp-container=${DOCKER_IMAGE}:${env.BUILD_ID} --record
-                    """
-                    }
+                    """ // Update the Kubernetes deployment with the new Docker image
+                }
             }
         }
     }
-    post {
-        always {
-            sh 'echo "Nettoyage en cours...'
+    post { // Define the post-build actions
+        always { // Always execute this block
+            sh 'echo "Nettoyage en cours...' // Print a message for cleanup
             // Ajoutez ici des commandes pour nettoyer l'environment après le build si nécessaire
         }
-        success {
-            mail to: 'team@yourdomain.com',
-            subject: "Déploiement réussi: My App ${env.BUILD_NUMBER}",
-            body: "Nouvelle version de l'application déployée en production: ${DOCKER_IMAGE}:${env.BUILD_ID}"
+        success { // Execute this block if the build is successful
+            mail to: 'team@yourdomain.com', // Send an email to the specified recipients
+            subject: "Déploiement réussi: My App ${env.BUILD_NUMBER}", // Set the email subject
+            body: "Nouvelle version de l'application déployée en production: ${DOCKER_IMAGE}:${env.BUILD_ID}" // Set the email body
         }
-        failure {
-            mail to: 'team@yourdomain.com'
-            subject: "Echec du déploiement: My App ${env.BUILD_NUMBER}",
-            body: "Le déploiement a échoué. Veuillez vérifier les logs de jenkins pour plus de détails."
+        failure { // Execute this block if the build fails
+            mail to: 'team@yourdomain.com', // Send an email to the specified recipients
+            subject: "Echec du déploiement: My App ${env.BUILD_NUMBER}", // Set the email subject
+            body: "Le déploiement a échoué. Veuillez vérifier les logs de jenkins pour plus de détails." // Set the email body
         }
     }
 }
